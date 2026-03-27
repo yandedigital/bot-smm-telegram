@@ -1,41 +1,37 @@
 export default async function handler(req, res) {
-  // 1. CCTV Vercel: Memaksa Vercel mencatat ada tamu yang datang
   console.log("Menerima request dengan metode:", req.method);
   
   if (req.body) {
-    // Mencatat apa isi pesan dari Telegram
     console.log("Isi data dari Telegram:", JSON.stringify(req.body));
   }
 
   if (req.method === 'POST') {
-    // Membaca pesan Telegram
     const message = req.body?.message;
     
     if (message && message.text) {
       const chatId = message.chat.id;
       const text = message.text;
       
-      const token = '8568216609:AAGPGjHkx8CwkXVlt24UHPmmc89cQYkLutE';
-      const smmKey = 'e792c60725a0e7f8e94b57dac84ee0fbb70db72628d778d83786133786a7b87e';
+      // === BAGIAN PENTING: ISI DENGAN TOKEN DAN API KEY MILIKMU ===
+      const token = '8568216609:AAGPGjHkx8CwkXVlt24UHPmmc89cQYkLutE'; 
+      const smmKey = 'e792c60725a0e7f8e94b57dac84ee0fbb70db72628d778d83786133786a7b87e'; 
       const smmUrl = 'https://layanan-sosmed.com/api'; 
+      // ============================================================
 
       let reply = "Maaf, perintah tidak dikenali. Ketik /start, /saldo, atau /layanan";
 
-      // LOGIKA BALASAN BOT
       if (text === '/start') {
         reply = "Halo! Selamat datang di Bot SMM otomatis.\n\nKetik /layanan untuk melihat harga,\nKetik /saldo untuk cek saldo pusat (Admin).";
       } 
-     else if (text === '/saldo') {
+      else if (text === '/saldo') {
         try {
           const params = new URLSearchParams();
           params.append('key', smmKey);
           params.append('action', 'balance');
 
           const response = await fetch(smmUrl, { method: 'POST', body: params });
-          
-          // UBAH DISINI: Kita baca balasannya sebagai teks biasa dulu, bukan JSON
           const rawText = await response.text();
-          console.log("Balasan MENTAH dari server SMM (Saldo):", rawText);
+          console.log("Balasan MENTAH Saldo dari Server:", rawText); // CCTV KITA
 
           try {
             const data = JSON.parse(rawText);
@@ -45,26 +41,10 @@ export default async function handler(req, res) {
               reply = `Gagal cek saldo. Jawaban server: ${JSON.stringify(data)}`;
             }
           } catch (parseError) {
-             reply = "Gagal membaca data dari server SMM. Server mengembalikan halaman HTML/Error. Cek Logs Vercel untuk detailnya.";
-          }
-
-        } catch (error) {
-          console.error("Error jaringan saat cek saldo:", error);
-          reply = "Koneksi ke server SMM terputus.";
-        }
-      }
-
-          // Menggunakan 'fetch' bawaan agar tidak error di Vercel
-          const response = await fetch(smmUrl, { method: 'POST', body: params });
-          const data = await response.json();
-          
-          if (data.balance !== undefined) {
-            reply = `💰 Saldo modal kamu di pusat saat ini: Rp ${data.balance}`;
-          } else {
-            reply = `Gagal cek saldo. Jawaban server: ${JSON.stringify(data)}`;
+            reply = "Gagal membaca saldo. Server SMM membalas dengan format yang salah (HTML).";
           }
         } catch (error) {
-          console.error("Error cek saldo:", error);
+          console.error("Error jaringan cek saldo:", error);
           reply = "Waduh, koneksi ke server SMM sedang bermasalah.";
         }
       }
@@ -75,50 +55,43 @@ export default async function handler(req, res) {
           params.append('action', 'services');
 
           const response = await fetch(smmUrl, { method: 'POST', body: params });
-          const dataLayanan = await response.json();
+          const rawText = await response.text();
+          console.log("Balasan MENTAH Layanan dari Server:", rawText); // CCTV KITA
 
-          if (Array.isArray(dataLayanan) && dataLayanan.length > 0) {
-            reply = "📋 *Daftar 5 Layanan SMM (Contoh):*\n\n";
-            for (let i = 0; i < 5; i++) {
-              let hargaAsli = parseFloat(dataLayanan[i].rate);
-              let hargaJual = hargaAsli * 1.2; // Tambah untung 20%
-              
-              reply += `ID: ${dataLayanan[i].service}\n`;
-              reply += `Nama: ${dataLayanan[i].name}\n`;
-              reply += `Harga Jual: Rp ${hargaJual.toFixed(0)} / 1000\n`;
-              reply += `==================\n`;
+          try {
+            const dataLayanan = JSON.parse(rawText);
+            if (Array.isArray(dataLayanan) && dataLayanan.length > 0) {
+              reply = "📋 *Daftar 5 Layanan SMM (Contoh):*\n\n";
+              for (let i = 0; i < 5; i++) {
+                let hargaAsli = parseFloat(dataLayanan[i].rate);
+                let hargaJual = hargaAsli * 1.2; // Untung 20%
+                reply += `ID: ${dataLayanan[i].service}\nNama: ${dataLayanan[i].name}\nHarga Jual: Rp ${hargaJual.toFixed(0)} / 1000\n==================\n`;
+              }
+            } else {
+              reply = `Gagal mengambil layanan. Server menjawab: ${JSON.stringify(dataLayanan)}`;
             }
-          } else {
-            reply = `Gagal mengambil layanan. Server menjawab: ${JSON.stringify(dataLayanan)}`;
+          } catch (parseError) {
+            reply = "Gagal membaca layanan. Server SMM membalas dengan format yang salah (HTML).";
           }
         } catch (error) {
-          console.error("Error cek layanan:", error);
+          console.error("Error jaringan cek layanan:", error);
           reply = "Waduh, koneksi ke server SMM sedang bermasalah.";
         }
       }
 
-      // 2. KIRIM BALASAN KE TELEGRAM
+      // KIRIM BALASAN KE TELEGRAM
       try {
         const teleUrl = `https://api.telegram.org/bot${token}/sendMessage`;
-        const sendResponse = await fetch(teleUrl, {
+        await fetch(teleUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            chat_id: chatId,
-            text: reply,
-            parse_mode: 'Markdown'
-          })
+          body: JSON.stringify({ chat_id: chatId, text: reply, parse_mode: 'Markdown' })
         });
-        
-        const teleResult = await sendResponse.json();
-        console.log("Status pengiriman ke Telegram:", teleResult);
-        
       } catch (error) {
-        console.error("Gagal total mengirim pesan:", error);
+        console.error("Gagal total mengirim pesan ke Telegram:", error);
       }
     }
   }
   
-  // Wajib ada agar Telegram tidak mengirim ulang pesannya terus-terusan
   res.status(200).send('OK');
 }
