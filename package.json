@@ -1,0 +1,8 @@
+{
+  "name": "bot-smm-otomatis",
+  "version": "1.0.0",
+  "description": "Bot Telegram SMM",
+  "dependencies": {
+    "axios": "^1.6.0"
+  }
+}
