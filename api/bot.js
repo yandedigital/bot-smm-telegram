@@ -25,11 +25,34 @@ export default async function handler(req, res) {
       if (text === '/start') {
         reply = "Halo! Selamat datang di Bot SMM otomatis.\n\nKetik /layanan untuk melihat harga,\nKetik /saldo untuk cek saldo pusat (Admin).";
       } 
-      else if (text === '/saldo') {
+     else if (text === '/saldo') {
         try {
           const params = new URLSearchParams();
           params.append('key', smmKey);
           params.append('action', 'balance');
+
+          const response = await fetch(smmUrl, { method: 'POST', body: params });
+          
+          // UBAH DISINI: Kita baca balasannya sebagai teks biasa dulu, bukan JSON
+          const rawText = await response.text();
+          console.log("Balasan MENTAH dari server SMM (Saldo):", rawText);
+
+          try {
+            const data = JSON.parse(rawText);
+            if (data.balance !== undefined) {
+              reply = `💰 Saldo modal kamu di pusat saat ini: Rp ${data.balance}`;
+            } else {
+              reply = `Gagal cek saldo. Jawaban server: ${JSON.stringify(data)}`;
+            }
+          } catch (parseError) {
+             reply = "Gagal membaca data dari server SMM. Server mengembalikan halaman HTML/Error. Cek Logs Vercel untuk detailnya.";
+          }
+
+        } catch (error) {
+          console.error("Error jaringan saat cek saldo:", error);
+          reply = "Koneksi ke server SMM terputus.";
+        }
+      }
 
           // Menggunakan 'fetch' bawaan agar tidak error di Vercel
           const response = await fetch(smmUrl, { method: 'POST', body: params });
