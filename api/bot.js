@@ -15,7 +15,7 @@ export default async function handler(req, res) {
       const chatId = message.chat.id;
       const text = message.text;
       
-      const token = process.env.TELEGRAM_TOKEN;
+      const token = '8568216609:AAGPGjHkx8CwkXVlt24UHPmmc89cQYkLutE';
       const smmKey = process.env.SMM_API_KEY;
       const smmUrl = 'https://layanan-sosmed.com/api'; 
 
