@@ -16,7 +16,7 @@ export default async function handler(req, res) {
       const text = message.text;
       
       const token = '8568216609:AAGPGjHkx8CwkXVlt24UHPmmc89cQYkLutE';
-      const smmKey = process.env.SMM_API_KEY;
+      const smmKey = 'e792c60725a0e7f8e94b57dac84ee0fbb70db72628d778d83786133786a7b87e';
       const smmUrl = 'https://layanan-sosmed.com/api'; 
 
       let reply = "Maaf, perintah tidak dikenali. Ketik /start, /saldo, atau /layanan";
