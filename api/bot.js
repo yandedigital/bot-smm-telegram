@@ -1,4 +1,4 @@
-const axios = require('axios');
+import axios from 'axios';
 
 export default async function handler(req, res) {
   // Hanya proses jika ada data yang dikirim (POST)
@@ -10,7 +10,7 @@ export default async function handler(req, res) {
       const chatId = message.chat.id;
       const text = message.text;
       
-      // Mengambil Token Bot dari sistem Vercel (nanti kita isi)
+      // Mengambil Token Bot dari sistem Vercel
       const token = process.env.TELEGRAM_TOKEN;
       let reply = "Halo! Ini adalah balasan otomatis dari bot Node.js kamu.";
 
